@@ -1,0 +1,8 @@
+vault/credentials/
+vault/data/
+__pycache__/
+*.pyc
+node_modules/
+dist/
+.env
+vault/rendered/

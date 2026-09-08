@@ -1,0 +1,44 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    container_name: secure-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_DB: taskdb
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../vault/rendered/db_password:/run/secrets/db_password:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d taskdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: secure-backend
+    restart: unless-stopped
+    volumes:
+      - ../vault/rendered/database.env:/run/secrets/database.env:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: secure-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:
