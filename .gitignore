@@ -6,3 +6,4 @@ node_modules/
 dist/
 .env
 vault/rendered/
+actions-runner/
