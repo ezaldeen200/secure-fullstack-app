@@ -20,6 +20,7 @@ services:
   backend:
     build:
       context: ./backend
+    image: secure-fullstack-app-backend:latest
     container_name: secure-backend
     restart: unless-stopped
     volumes:
@@ -33,6 +34,7 @@ services:
   frontend:
     build:
       context: ./frontend
+    image: secure-fullstack-app-frontend:latest
     container_name: secure-frontend
     restart: unless-stopped
     depends_on:

@@ -1,0 +1,102 @@
+name: Security Scanning Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  trufflehog:
+    name: TruffleHog Secret Scan
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+
+  bandit:
+    name: Bandit Python SAST
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Bandit
+        run: |
+          python3 -m pip install --user bandit
+
+      - name: Run Bandit
+        run: |
+          ~/.local/bin/bandit -r backend -ll
+
+
+  hadolint:
+    name: Hadolint Dockerfile Scan
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Hadolint on Backend Dockerfile
+        run: |
+          docker run --rm \
+            -i \
+            hadolint/hadolint:latest \
+            hadolint - < backend/Dockerfile
+
+      - name: Run Hadolint on Frontend Dockerfile
+        run: |
+          docker run --rm \
+            -i \
+            hadolint/hadolint:latest \
+            hadolint - < frontend/Dockerfile
+
+
+  trivy:
+    name: Trivy Container Vulnerability Scan
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: |
+          docker compose build
+
+      - name: Scan Backend image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest \
+            image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            secure-fullstack-app-backend:latest
+
+      - name: Scan Frontend image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest \
+            image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            secure-fullstack-app-frontend:latest
