@@ -37,13 +37,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create Python virtual environment
+        run: |
+          python3 -m venv .bandit-venv
+
       - name: Install Bandit
         run: |
-          python3 -m pip install --user bandit
+          .bandit-venv/bin/python -m pip install --upgrade pip
+          .bandit-venv/bin/pip install bandit
 
       - name: Run Bandit
         run: |
-          ~/.local/bin/bandit -r backend -ll
+          .bandit-venv/bin/bandit -r backend -ll
 
 
   hadolint:
